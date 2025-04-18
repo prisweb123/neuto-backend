@@ -53,3 +53,7 @@ Thumbs.db
 
 # Uploads directory
 uploads/
+
+# Production build
+build/
+dist/

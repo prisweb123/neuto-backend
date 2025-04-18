@@ -10,10 +10,15 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Check if user exists
-        const user = await User.findOne({ email });
+        // Check if user exists and explicitly select password
+        const user = await User.findOne({ email }).select('+password');
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Check if user is active
+        if (!user.active) {
+            return res.status(401).json({ message: 'Account is deactivated' });
         }
 
         // Check password
@@ -22,24 +27,49 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Generate JWT token
+        // Create token payload
+        const payload = {
+            id: user._id.toString(),
+            role: user.role
+        };
+
+        // Ensure JWT_SECRET is defined
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            throw new Error('JWT_SECRET is not defined');
+        }
+
+        // Sign token
         const token = jwt.sign(
-            { id: user._id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '1d' }
+            payload,
+            jwtSecret,
+            {
+                expiresIn: '1d',
+                algorithm: 'HS256'
+            }
         );
 
+        // Remove password from response
+        const userResponse = {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            active: user.active
+        };
+
         res.status(200).json({
+            success: true,
             token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role
-            }
+            user: userResponse
         });
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        console.error('Login error:', error);
+        res.status(500).json({ 
+            message: 'Server error', 
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 

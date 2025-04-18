@@ -6,10 +6,20 @@ const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const packageRoutes = require('./routes/packageRoutes');
 const optionPackageRoutes = require('./routes/optionPackageRoutes');
-const priceOffer =  require('./routes/priceOfferRoutes')
+const priceOffer = require('./routes/priceOfferRoutes');
 
 // Load environment variables
 dotenv.config();
+
+// Verify environment variables
+console.log('Environment variables:');
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
+console.log('MONGODB_URL:', process.env.MONGODB_URL ? 'Set' : 'Not set');
+
+if (!process.env.JWT_SECRET) {
+    console.error('JWT_SECRET is not set in environment variables');
+    process.exit(1);
+}
 
 // Initialize express app
 const app = express();
@@ -51,17 +61,16 @@ app.get('/', (req, res) => {
 });
 
 // Mount routes
-app.use('/api/users', userRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/packages', packageRoutes);
-app.use('/api/option-packages', optionPackageRoutes);
-app.use('/api/priceoffers', priceOffer);
-
+app.use('/users', userRoutes);
+app.use('/products', productRoutes);
+app.use('/packages', packageRoutes);
+app.use('/option-packages', optionPackageRoutes);
+app.use('/priceoffers', priceOffer);
 
 // Start server
-// const PORT = process.env.PORT || 5000;
-// app.listen(PORT, () => {
-//   console.log(`Server is running on port ${PORT}`);
-// });
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 module.exports = app;

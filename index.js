@@ -24,28 +24,32 @@ if (!process.env.JWT_SECRET) {
 // Initialize express app
 const app = express();
 
+// Remove trailing slashes
+app.use((req, res, next) => {
+  if (req.path.slice(-1) === '/' && req.path.length > 1) {
+    const query = req.url.slice(req.path.length);
+    const safePath = req.path.slice(0, -1).replace(/\/+/g, '/');
+    res.redirect(301, safePath + query);
+  } else {
+    next();
+  }
+});
+
 // CORS configuration
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://neuto-frontend-sumy.vercel.app'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  origin: [
+    'http://localhost:3000',
+    'https://neuto-frontend-sumy.vercel.app'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
 
 // Middleware
 app.use(express.json());
-
-// Remove any trailing slashes from URLs
-app.use((req, res, next) => {
-  if (req.path.endsWith('/') && req.path.length > 1) {
-    const query = req.url.slice(req.path.length);
-    res.redirect(301, req.path.slice(0, -1) + query);
-  } else {
-    next();
-  }
-});
 
 // MongoDB Connection
 mongoose.connect(`${process.env.MONGODB_URL}`, {
@@ -55,17 +59,27 @@ mongoose.connect(`${process.env.MONGODB_URL}`, {
 .then(() => console.log('Connected to MongoDB successfully'))
 .catch((err) => console.error('MongoDB connection error:', err));
 
-// Basic route
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to Nettauto API' });
-});
-
 // Mount routes
 app.use('/users', userRoutes);
 app.use('/products', productRoutes);
 app.use('/packages', packageRoutes);
 app.use('/option-packages', optionPackageRoutes);
 app.use('/priceoffers', priceOffer);
+
+// Basic route
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to Nettauto API' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;

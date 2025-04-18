@@ -2,6 +2,46 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { protect, authorize } = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// Login user
+router.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Check if user exists
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Check password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '1d' }
+        );
+
+        res.status(200).json({
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
 
 // Register user
 router.post('/register', protect, authorize('admin'), async (req, res) => {
@@ -32,47 +72,6 @@ router.post('/register', protect, authorize('admin'), async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ message: 'Error creating user', error: err.message });
-    }
-});
-
-// Login user
-router.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        // Validate email & password
-        if (!email || !password) {
-            return res.status(400).json({ message: 'Please provide email and password' });
-        }
-
-        // Check for user
-        const user = await User.findOne({ email }).select('+password');
-        if (!user) {
-            return res.status(401).json({ message: 'Brukernavn/Passord er feil' });
-        }
-
-        if(!user.active){
-            return res.status(401).json({ message: 'Has not Acces to login' });
-        }
-
-        // Check if password matches
-        const isMatch = await user.matchPassword(password);
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Brukernavn/Passord er feil' });
-        }
-
-        // Create token
-        const token = user.getSignedJwtToken();
-
-        res.json({
-            success: true,
-            message: 'Du er nå logget inn',
-            token,
-            role: user.role,
-            name: user.name
-        });
-    } catch (err) {
-        res.status(500).json({ message: 'Error logging in', error: err.message });
     }
 });
 

@@ -15,15 +15,11 @@ dotenv.config();
 const app = express();
 
 // CORS configuration
-// app.use(cors({
-//   origin: ['http://localhost:3000', 'https://netauto-theta.vercel.app', 'https://merhebia.prisweb.no', ''],
-//   credentials: true
-// }));
 app.use(cors({
-  origin: function(origin, callback) {
-    callback(null, true); // Allow any origin
-  },
-  credentials: true
+  origin: ['http://localhost:3000', 'https://neuto-frontend-sumy.vercel.app'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 // Middleware
 app.use(express.json());

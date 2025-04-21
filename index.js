@@ -8,11 +8,15 @@ const packageRoutes = require('./routes/packageRoutes');
 const optionPackageRoutes = require('./routes/optionPackageRoutes');
 const priceOffer = require('./routes/priceOfferRoutes');
 
+console.log('=== Server Starting ===');
+console.log('Current Time:', new Date().toISOString());
+console.log('Node Environment:', process.env.NODE_ENV);
+
 // Load environment variables
 dotenv.config();
 
 // Verify environment variables
-console.log('Environment variables:');
+console.log('\nEnvironment variables:');
 console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
 console.log('MONGODB_URL:', process.env.MONGODB_URL ? 'Set' : 'Not set');
 
@@ -50,6 +54,18 @@ app.use(cors({
 
 // Middleware
 app.use(express.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+    console.log('\n=== Incoming Request ===');
+    console.log('Time:', new Date().toISOString());
+    console.log('Method:', req.method);
+    console.log('Path:', req.path);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+    console.log('======================\n');
+    next();
+});
 
 // MongoDB Connection
 mongoose.connect(`${process.env.MONGODB_URL}`, {

@@ -2,15 +2,27 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
 const PriceOffer = require('../models/PriceOffer');
+const Package = require('../models/Package');
 
 // @desc    Create new price offer
 // @route   POST /api/priceoffers
 // @access  Private
 router.post('/', protect, async (req, res) => {
     try {
+        let selectedPackageData = null;
+
+        if (req.body.selectedPackage) {
+          const packageDoc = await Package.findById(req.body.selectedPackage).lean();
+          if (!packageDoc) {
+            return res.status(400).json({ success: false, message: 'Selected package not found' });
+          }
+          selectedPackageData = packageDoc;
+        }
+    
         const priceOffer = await PriceOffer.create({
-            ...req.body,
-            createdBy: req.user.id
+          ...req.body,
+          selectedPackage: selectedPackageData,
+          createdBy: req.user.id
         });
 
         res.status(201).json({
@@ -60,8 +72,7 @@ router.get('/', protect, async (req, res) => {
                         name: undefined
                     };
                 }
-            })
-            .populate('selectedPackage');
+            });
 
         console.log('Price offers fetched:', priceOffers);
 

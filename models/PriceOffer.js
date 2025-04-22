@@ -6,9 +6,8 @@ const priceOfferSchema = new mongoose.Schema({
         unique: true
     },
     selectedPackage: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Package',
-        default: null    
+        type: mongoose.Schema.Types.Mixed,
+        default: null
     },
     marke: {
         type: String,

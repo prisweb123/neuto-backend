@@ -11,10 +11,6 @@ const packageSchema = new mongoose.Schema({
         required: [true, 'Please add a description'],
         trim: true
     },
-    image: {
-        type: String,
-        required: [true, 'Please add an image']
-    },
     markeModels: [{
         marke: {
             type: String,

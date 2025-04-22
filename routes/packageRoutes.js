@@ -6,32 +6,15 @@ const path = require('path');
 const Package = require('../models/Package');
 const { protect, authorize } = require('../middleware/auth');
 
-// Configure multer for memory storage
-const storage = multer.memoryStorage();
 
-const upload = multer({
-    storage: storage,
-    fileFilter: function(req, file, cb) {
-        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-            return cb(new Error('Please upload an image file (jpg, jpeg, or png)'));
-        }
-        cb(null, true);
-    }
-});
+const upload = multer();
 
 // Helper function to convert buffer to base64
-const bufferToBase64 = (buffer, mimetype) => {
-    return `data:${mimetype};base64,${buffer.toString('base64')}`;
-};
+
 
 // Create new package
-router.post('/', protect, authorize('admin'), upload.single('image'), async (req, res) => {
+router.post('/', protect, authorize('admin'), upload.none(), async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'Please upload an image' });
-        }
-
-        const base64Image = bufferToBase64(req.file.buffer, req.file.mimetype);
 
         // Parse markeModels from the request body
         const markeModels = Array.isArray(req.body.markeModels) 
@@ -42,8 +25,7 @@ router.post('/', protect, authorize('admin'), upload.single('image'), async (req
 
         const packageData = {
             ...req.body,
-            markeModels,
-            image: base64Image
+            markeModels
         };
 
         const package = await Package.create(packageData);
@@ -85,7 +67,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update package
-router.put('/:id', protect, authorize('admin'), upload.single('image'), async (req, res) => {
+router.put('/:id', protect, authorize('admin'), upload.none(), async (req, res) => {
     try {
         let package = await Package.findById(req.params.id);
         if (!package) {
@@ -103,11 +85,6 @@ router.put('/:id', protect, authorize('admin'), upload.single('image'), async (r
             ...req.body,
             markeModels
         };
-
-        if (req.file) {
-            const base64Image = bufferToBase64(req.file.buffer, req.file.mimetype);
-            packageData.image = base64Image;
-        }
 
         package = await Package.findByIdAndUpdate(
             req.params.id,
@@ -139,35 +116,5 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
         res.status(500).json({ message: 'Error deleting package', error: err.message });
     }
 });
-
-// Get image
-router.get('/image/:id', async (req, res) => {
-  try {
-    const package = await Package.findById(req.params.id).select('image');
-    
-    if (!package || !package.image) return res.status(404).send('Image not found');
-
-    const base64 = package.image;
-
-    // If base64 includes full data URI, just return it:
-    if (base64.startsWith('data:image')) {
-      const base64Data = base64.split(',')[1];
-      const mimeType = base64.split(';')[0].replace('data:', '');
-
-      const img = Buffer.from(base64Data, 'base64');
-      res.set('Content-Type', mimeType);
-      return res.send(img);
-    }
-
-    // Otherwise fallback to PNG
-    const img = Buffer.from(base64, 'base64');
-    res.set('Content-Type', 'image/png');
-    return res.send(img);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error retrieving image');
-  }
-});
-
 
 module.exports = router;

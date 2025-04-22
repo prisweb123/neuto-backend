@@ -60,7 +60,7 @@ router.post('/', protect, authorize('admin'), upload.single('image'), async (req
 // Get all packages
 router.get('/', async (req, res) => {
     try {
-        const packages = await Package.find();
+        const packages = await Package.find({}, '-image');
         res.json({ success: true, count: packages.length, data: packages });
     } catch (err) {
         res.status(500).json({ message: 'Error fetching packages', error: err.message });
@@ -139,5 +139,35 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
         res.status(500).json({ message: 'Error deleting package', error: err.message });
     }
 });
+
+// Get image
+router.get('/image/:id', async (req, res) => {
+  try {
+    const package = await Package.findById(req.params.id).select('image');
+    
+    if (!package || !package.image) return res.status(404).send('Image not found');
+
+    const base64 = package.image;
+
+    // If base64 includes full data URI, just return it:
+    if (base64.startsWith('data:image')) {
+      const base64Data = base64.split(',')[1];
+      const mimeType = base64.split(';')[0].replace('data:', '');
+
+      const img = Buffer.from(base64Data, 'base64');
+      res.set('Content-Type', mimeType);
+      return res.send(img);
+    }
+
+    // Otherwise fallback to PNG
+    const img = Buffer.from(base64, 'base64');
+    res.set('Content-Type', 'image/png');
+    return res.send(img);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error retrieving image');
+  }
+});
+
 
 module.exports = router;

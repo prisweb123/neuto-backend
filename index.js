@@ -43,6 +43,7 @@ app.use((req, res, next) => {
 app.use(cors({
   origin: [
     'http://localhost:3000',
+    'https://merhebia.prisweb.no',
     'https://neuto-frontend-sumy.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -84,7 +85,7 @@ app.use('/priceoffers', priceOffer);
 
 // Basic route
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to Nettauto API' });
+  res.json({ message: 'Welcome to MErhebia API' });
 });
 
 // Error handling middleware

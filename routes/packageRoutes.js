@@ -6,18 +6,16 @@ const path = require('path');
 const Package = require('../models/Package');
 const { protect, authorize } = require('../middleware/auth');
 
+
 const upload = multer();
 
-// Helper function to parse date from DD.MM.YYYY format
-const parseDate = (dateStr) => {
-    if (!dateStr) return null;
-    const [day, month, year] = dateStr.split('.');
-    return new Date(year, month - 1, day);
-};
+// Helper function to convert buffer to base64
+
 
 // Create new package
 router.post('/', protect, authorize('admin'), upload.none(), async (req, res) => {
     try {
+
         // Parse markeModels from the request body
         const markeModels = Array.isArray(req.body.markeModels) 
             ? req.body.markeModels 
@@ -27,8 +25,7 @@ router.post('/', protect, authorize('admin'), upload.none(), async (req, res) =>
 
         const packageData = {
             ...req.body,
-            markeModels,
-            endDate: parseDate(req.body.endDate)
+            markeModels
         };
 
         const package = await Package.create(packageData);
@@ -86,8 +83,7 @@ router.put('/:id', protect, authorize('admin'), upload.none(), async (req, res) 
 
         let packageData = {
             ...req.body,
-            markeModels,
-            endDate: parseDate(req.body.endDate)
+            markeModels
         };
 
         package = await Package.findByIdAndUpdate(
